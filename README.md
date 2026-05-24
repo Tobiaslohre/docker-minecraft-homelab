@@ -141,3 +141,7 @@ The screenshots below show the Docker Compose configuration, the running Minecra
 - Add monitoring with Prometheus and Grafana
 - Add Uptime Kuma for service status monitoring
 - Add server hardening and SSH key authentication
+
+## Next Step
+
+The next phase of this project is to make the server publicly reachable using router port forwarding and a custom domain managed through Cloudflare DNS.
