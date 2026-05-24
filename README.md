@@ -108,6 +108,19 @@ Local server address:
 192.168.1.41:25565
 ```
 
+## Screenshots
+
+The screenshots below show the Docker Compose configuration, the running Minecraft container, and a successful Minecraft client connection on the local network.
+
+### Docker Compose Configuration
+![Docker Compose Configuration](./screenshots/docker-compose-config.png)
+
+### Docker Container Running
+![Docker Container Running](./screenshots/docker-container-running.png)
+
+### Minecraft Client Connected
+![Minecraft Client Connected](./screenshots/minecraft-client-connected.png)
+
 ## Key Learnings
 
 - Docker Compose service configuration
