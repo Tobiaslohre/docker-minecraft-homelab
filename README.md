@@ -54,7 +54,7 @@ services:
       VERSION: "1.21.4"
       MEMORY: "4G"
       ONLINE_MODE: "TRUE"
-      MOTD: "Tobias Homelab Minecraft Server"
+      MOTD: "Elitedesk Minecraft Server"
     volumes:
       - ./data:/data
     restart: unless-stopped
