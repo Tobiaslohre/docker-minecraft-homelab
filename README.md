@@ -112,6 +112,9 @@ Local server address:
 
 The screenshots below show the Docker Compose configuration, the running Minecraft container, and a successful Minecraft client connection on the local network.
 
+### Docker Installation Verified
+![Docker Installation Verified](./screenshots/docker-installation-verified.png)
+
 ### Docker Compose Configuration
 ![Docker Compose Configuration](./screenshots/docker-compose-config.png)
 
