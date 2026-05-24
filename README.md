@@ -132,16 +132,21 @@ The screenshots below show the Docker Compose configuration, the running Minecra
 - Basic container lifecycle management
 - Reading container logs for troubleshooting
 - Hosting a service on a self-managed Linux server
+- Difference between local network hosting and public internet exposure
 
-## Future Improvements
+## Security Note
 
-- Configure Cloudflare DNS and a custom domain
-- Configure router port forwarding for external access
-- Add automated backups
-- Add monitoring with Prometheus and Grafana
-- Add Uptime Kuma for service status monitoring
-- Add server hardening and SSH key authentication
+The server is currently tested on the local network only.
+
+Before exposing the server publicly, router port forwarding and firewall rules should be reviewed carefully. Administrative access should remain restricted to SSH on the local network or trusted IP addresses only.
 
 ## Next Step
 
 The next phase of this project is to make the server publicly reachable using router port forwarding and a custom domain managed through Cloudflare DNS.
+
+## Future Improvements
+
+- Add automated backups
+- Add monitoring with Prometheus and Grafana
+- Add Uptime Kuma for service status monitoring
+- Add server hardening and SSH key authentication
