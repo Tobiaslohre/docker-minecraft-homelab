@@ -10,20 +10,14 @@ The goal of the project is to learn Docker Compose, persistent volumes, containe
 
 ```mermaid
 graph LR
-    Client[Minecraft Client] --> DNS[mc.tobiaslohre.no]
-    DNS --> CF[Cloudflare DNS]
-    CF --> Router[Router / NAT<br>TCP 25565]
-    Router --> Host[HP EliteDesk<br>Ubuntu Server]
+    Client[Minecraft Client] --> Internet[mc.tobiaslohre.no<br>Cloudflare DNS]
+    Internet --> Router[Router NAT<br>TCP 25565]
+    Router --> Server[HP EliteDesk<br>Ubuntu Server]
 
-    Host --> Docker[Docker Engine]
-    Docker --> MC[PaperMC Container]
-    MC --> Data[Persistent Volume<br>./data]
-
-    Host --> Backup[Cron Backups<br>~/backups/minecraft]
-    Host --> Kuma[Uptime Kuma<br>TCP Monitor]
-    Host --> SSH[Hardened SSH<br>Key-only + fail2ban]
+    Server --> Stack[Docker Compose<br>PaperMC + Uptime Kuma]
+    Stack --> Data[Persistent Data<br>Backups via Cron]
+    Server --> Security[SSH Hardening<br>Key-only + fail2ban]
 ```
-
 ## Tech Stack
 
 - HP EliteDesk
