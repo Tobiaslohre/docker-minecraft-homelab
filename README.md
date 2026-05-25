@@ -276,6 +276,9 @@ The screenshots below show Docker verification, the Docker Compose configuration
 ### Uptime Kuma Monitoring
 ![Uptime Kuma Monitoring](./screenshots/uptime-kuma-monitoring.png)
 
+### Server Hardening Verified
+![Server Hardening Verified](./screenshots/server-hardening-verified.png)
+
 ## Key Learnings
 
 - Docker Compose service configuration
