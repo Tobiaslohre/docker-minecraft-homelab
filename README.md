@@ -138,7 +138,7 @@ Backup schedule:
 0 4 * * * /home/tobias/scripts/minecraft-backup.sh >> /home/tobias/backups/minecraft/backup.log 2>&1
 ```
 
-manuell backup command ~/scripts/minecraft-backup.sh
+Manual backup command: ~/scripts/minecraft-backup.sh
 
 Example backup output:
 
@@ -147,6 +147,11 @@ Minecraft container is running. Saving world...
 Backup created: /home/tobias/backups/minecraft/minecraft-backup-YYYY-MM-DD_HH-MM-SS.tar.gz
 Old backups older than 14 days removed.
 Backup complete.
+
+Example backup verification: ls -lh ~/backups/minecraft
+tar -tzf ~/backups/minecraft/*.tar.gz | head
+
+The backup archive was verified by listing its contents and confirming that it includes the Minecraft server data/ directory.
 
 ## Screenshots
 
