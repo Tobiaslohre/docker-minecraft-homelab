@@ -8,8 +8,6 @@ The goal of the project is to learn Docker Compose, persistent volumes, containe
 
 ## Architecture
 
-## Architecture
-
 ```mermaid
 graph TD
 
