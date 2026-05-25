@@ -118,6 +118,7 @@ The Minecraft server was made reachable from outside the local network by config
 - Domain registrar: Webhuset
 
 The DNS record points to the public IP address, while the router forwards Minecraft traffic on TCP port `25565` to the internal Ubuntu Server running the Docker container.
+
 ## Screenshots
 
 The screenshots below show Docker verification, the Docker Compose configuration, the running Minecraft container, successful port testing, and a Minecraft client connection through the configured domain.
