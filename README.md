@@ -216,6 +216,38 @@ UFW rule for local-only access:
 
 sudo ufw allow from 192.168.1.0/24 to any port 3001 proto tcp
 
+## Server Hardening
+
+Basic server hardening was applied to reduce the attack surface of the homelab server.
+
+Implemented hardening steps:
+
+- SSH key authentication enabled
+- Password-based SSH login disabled
+- Root SSH login disabled
+- Keyboard-interactive authentication disabled
+- SSH configuration validated using `sshd -t`
+- SSH access tested using public key authentication
+- fail2ban installed and enabled for SSH protection
+
+Effective SSH configuration:
+
+```text
+
+fail2ban status:
+
+Number of jail: 1
+Jail list: sshd
+Currently banned: 0
+
+This improves SSH security by allowing only public key authentication and monitoring failed SSH login attempts.
+pubkeyauthentication yes
+passwordauthentication no
+kbdinteractiveauthentication no
+permitrootlogin no
+```
+This improves SSH security by allowing only public key authentication and monitoring failed SSH login attempts.
+
 ## Screenshots
 
 The screenshots below show Docker verification, the Docker Compose configuration, the running Minecraft container, successful port testing, and a Minecraft client connection through the configured domain.
@@ -269,6 +301,6 @@ The next phase of this project is to add automated backups and basic monitoring 
 
 ## Future Improvements
 
-- Store backups off-server
-- Add monitoring with Prometheus and Grafana
-- Add server hardening and SSH key authentication
+- Add off-server backups
+- Add Prometheus and Grafana monitoring
+- Add alert notifications for service downtime
