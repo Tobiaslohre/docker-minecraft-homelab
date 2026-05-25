@@ -100,14 +100,24 @@ docker compose down
 
 ## Current Status
 
-The Minecraft server is running in Docker on the homelab server and is accessible from the local network.
-
-Local server address:
+The Minecraft server is running in Docker on the homelab server and is accessible from both the local network and through the configured DNS record:
 
 ```text
-192.168.1.41:25565
+mc.tobiaslohre.no
 ```
 
+## Public Access
+
+The Minecraft server was made reachable from outside the local network by configuring router port forwarding and DNS.
+
+- Public DNS record: `mc.tobiaslohre.no`
+- Router port forwarding: TCP `25565`
+- Internal server IP: `192.168.1.41`
+- Minecraft server port: `25565`
+- DNS provider: Cloudflare
+- Domain registrar: Webhuset
+
+The DNS record points to the public IP address, while the router forwards Minecraft traffic on TCP port `25565` to the internal Ubuntu Server running the Docker container.
 ## Screenshots
 
 The screenshots below show the Docker Compose configuration, the running Minecraft container, and a successful Minecraft client connection on the local network.
@@ -123,6 +133,12 @@ The screenshots below show the Docker Compose configuration, the running Minecra
 
 ### Minecraft Client Connected
 ![Minecraft Client Connected](./screenshots/minecraft-client-connected.png)
+
+### Minecraft Domain Port Test
+![Minecraft Domain Port Test](./screenshots/minecraft-domain-port-test.png)
+
+### Minecraft Domain Connection
+![Minecraft Domain Connection](./screenshots/minecraft-domain-connected.png)
 
 ## Key Learnings
 
