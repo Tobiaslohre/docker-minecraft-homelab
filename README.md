@@ -194,6 +194,27 @@ Oppdater også `Key Learnings` med disse punktene:
 - Backup retention management
 - Restore testing and backup verification
 ```
+## Monitoring
+
+Uptime Kuma was deployed using Docker Compose to monitor the public Minecraft server endpoint.
+
+The monitor checks whether the Minecraft server is reachable on the configured TCP port.
+
+Monitored endpoint:
+
+```text
+mc.tobiaslohre.no:25565
+```
+Monitoring setup:
+
+Uptime Kuma runs in Docker
+Web interface is available locally on port 3001
+Minecraft server is monitored using a TCP port check
+Uptime Kuma access is restricted to the local network through UFW
+
+UFW rule for local-only access:
+
+sudo ufw allow from 192.168.1.0/24 to any port 3001 proto tcp
 
 ## Screenshots
 
@@ -220,6 +241,9 @@ The screenshots below show Docker verification, the Docker Compose configuration
 ### Automated Backup Verified
 ![Automated Backup Verified](./screenshots/automated-backup-verified.png)
 
+### Uptime Kuma Monitoring
+![Uptime Kuma Monitoring](./screenshots/uptime-kuma-monitoring.png)
+
 ## Key Learnings
 
 - Docker Compose service configuration
@@ -229,6 +253,9 @@ The screenshots below show Docker verification, the Docker Compose configuration
 - Reading container logs for troubleshooting
 - Hosting a service on a self-managed Linux server
 - Difference between local network hosting and public internet exposure
+- Basic service monitoring with Uptime Kuma
+- TCP port monitoring for public services
+- Restricting internal admin dashboards to the local network
 
 ## Security Note
 
@@ -244,5 +271,4 @@ The next phase of this project is to add automated backups and basic monitoring 
 
 - Store backups off-server
 - Add monitoring with Prometheus and Grafana
-- Add Uptime Kuma for service status monitoring
 - Add server hardening and SSH key authentication
