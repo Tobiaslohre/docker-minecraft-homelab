@@ -9,14 +9,26 @@ The goal of the project is to learn Docker Compose, persistent volumes, containe
 ## Architecture
 
 ```mermaid
-graph LR
-    Client[Minecraft Client] --> Internet[mc.tobiaslohre.no<br>Cloudflare DNS]
-    Internet --> Router[Router NAT<br>TCP 25565]
-    Router --> Server[HP EliteDesk<br>Ubuntu Server]
+graph TD
 
-    Server --> Stack[Docker Compose<br>PaperMC + Uptime Kuma]
-    Stack --> Data[Persistent Data<br>Backups via Cron]
-    Server --> Security[SSH Hardening<br>Key-only + fail2ban]
+    Player[Minecraft Client] --> DNS[mc.tobiaslohre.no]
+    DNS --> Cloudflare[Cloudflare DNS]
+    Cloudflare --> Router[Home Router / NAT]
+    Router -->|TCP 25565 Port Forward| Host[HP EliteDesk<br>Ubuntu Server]
+
+    Host --> Docker[Docker Engine]
+    Docker --> Minecraft[PaperMC Minecraft Container]
+    Minecraft --> Volume[Persistent Data Volume<br>./data]
+
+    Host --> Cron[Cron Job]
+    Cron --> BackupScript[Minecraft Backup Script]
+    BackupScript --> BackupFiles[Compressed Backup Archives<br>~/backups/minecraft]
+
+    Host --> Kuma[Uptime Kuma Container]
+    Kuma -->|TCP Check<br>mc.tobiaslohre.no:25565| Minecraft
+
+    Host --> SSH[Hardened SSH Access<br>Key-only Login]
+    SSH --> Fail2ban[fail2ban SSH Protection]
 ```
 ## Tech Stack
 
