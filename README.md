@@ -120,7 +120,7 @@ The Minecraft server was made reachable from outside the local network by config
 The DNS record points to the public IP address, while the router forwards Minecraft traffic on TCP port `25565` to the internal Ubuntu Server running the Docker container.
 ## Screenshots
 
-The screenshots below show the Docker Compose configuration, the running Minecraft container, and a successful Minecraft client connection on the local network.
+The screenshots below show Docker verification, the Docker Compose configuration, the running Minecraft container, successful port testing, and a Minecraft client connection through the configured domain.
 
 ### Docker Installation Verified
 ![Docker Installation Verified](./screenshots/docker-installation-verified.png)
@@ -152,13 +152,13 @@ The screenshots below show the Docker Compose configuration, the running Minecra
 
 ## Security Note
 
-The server is currently tested on the local network only.
+The server is publicly reachable through a DNS record and router port forwarding.
 
 Before exposing the server publicly, router port forwarding and firewall rules should be reviewed carefully. Administrative access should remain restricted to SSH on the local network or trusted IP addresses only.
 
 ## Next Step
 
-The next phase of this project is to make the server publicly reachable using router port forwarding and a custom domain managed through Cloudflare DNS.
+The next phase of this project is to add automated backups and basic monitoring for the Minecraft server.
 
 ## Future Improvements
 
