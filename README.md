@@ -153,6 +153,48 @@ tar -tzf ~/backups/minecraft/*.tar.gz | head
 
 The backup archive was verified by listing its contents and confirming that it includes the Minecraft server data/ directory.
 
+## Restore Test
+
+A restore test was performed by extracting the latest backup archive into a separate test directory without overwriting the live Minecraft server data.
+
+The restore test verified that:
+
+- The backup archive could be extracted successfully
+- The restored `data/` directory was present
+- Minecraft world directories were included:
+  - `world`
+  - `world_nether`
+  - `world_the_end`
+- The restored data size matched the live server data size
+
+Restore test commands:
+
+```bash
+mkdir -p ~/restore-test/minecraft
+
+LATEST_BACKUP=$(ls -t ~/backups/minecraft/minecraft-backup-*.tar.gz | head -1)
+echo "$LATEST_BACKUP"
+
+tar -xzf "$LATEST_BACKUP" -C ~/restore-test/minecraft
+
+ls -lh ~/restore-test/minecraft
+ls -lh ~/restore-test/minecraft/data
+
+du -sh ~/docker/minecraft-server/data
+du -sh ~/restore-test/minecraft/data
+
+rm -rf ~/restore-test
+```
+
+Oppdater også `Key Learnings` med disse punktene:
+
+```md
+- Automated backup scripting
+- Cron-based scheduled tasks
+- Backup retention management
+- Restore testing and backup verification
+```
+
 ## Screenshots
 
 The screenshots below show Docker verification, the Docker Compose configuration, the running Minecraft container, successful port testing, and a Minecraft client connection through the configured domain.
@@ -200,7 +242,7 @@ The next phase of this project is to add automated backups and basic monitoring 
 
 ## Future Improvements
 
-- Add automated backups
+- Store backups off-server
 - Add monitoring with Prometheus and Grafana
 - Add Uptime Kuma for service status monitoring
 - Add server hardening and SSH key authentication
