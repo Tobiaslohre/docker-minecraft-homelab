@@ -314,8 +314,6 @@ Only the required Minecraft port is exposed publicly. Administrative access shou
 
 ## Future Improvements
 
-## Future Improvements
-
 - Add off-server backups
 - Add Prometheus and Grafana monitoring
 - Add alert notifications for service downtime
