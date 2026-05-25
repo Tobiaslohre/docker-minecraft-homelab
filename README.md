@@ -296,14 +296,15 @@ The screenshots below show Docker verification, the Docker Compose configuration
 
 The server is publicly reachable through a DNS record and router port forwarding.
 
-Before exposing the server publicly, router port forwarding and firewall rules should be reviewed carefully. Administrative access should remain restricted to SSH on the local network or trusted IP addresses only.
+SSH access has been hardened by enabling public key authentication, disabling password-based login, disabling root login, and enabling fail2ban for SSH protection.
 
-## Next Step
+Only the required Minecraft port is exposed publicly. Administrative access should remain restricted to the local network or trusted IP addresses.
 
-The next phase of this project is to add automated backups and basic monitoring for the Minecraft server.
+## Future Improvements
 
 ## Future Improvements
 
 - Add off-server backups
 - Add Prometheus and Grafana monitoring
 - Add alert notifications for service downtime
+- Automate deployment with Ansible
