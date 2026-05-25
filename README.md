@@ -119,6 +119,35 @@ The Minecraft server was made reachable from outside the local network by config
 
 The DNS record points to the public IP address, while the router forwards Minecraft traffic on TCP port `25565` to the internal Ubuntu Server running the Docker container.
 
+## Automated Backups
+
+An automated backup script was created to back up the Minecraft server data directory.
+
+The backup script:
+
+- Saves the Minecraft world before backup using `rcon-cli save-all`
+- Creates a compressed `.tar.gz` archive of the persistent `./data` directory
+- Stores backups in `~/backups/minecraft`
+- Uses timestamps for backup filenames
+- Removes backups older than 14 days
+- Runs automatically every night using cron
+
+Backup schedule:
+
+```cron
+0 4 * * * /home/tobias/scripts/minecraft-backup.sh >> /home/tobias/backups/minecraft/backup.log 2>&1
+```
+
+manuell backup command ~/scripts/minecraft-backup.sh
+
+Example backup output:
+
+Starting Minecraft backup...
+Minecraft container is running. Saving world...
+Backup created: /home/tobias/backups/minecraft/minecraft-backup-YYYY-MM-DD_HH-MM-SS.tar.gz
+Old backups older than 14 days removed.
+Backup complete.
+
 ## Screenshots
 
 The screenshots below show Docker verification, the Docker Compose configuration, the running Minecraft container, successful port testing, and a Minecraft client connection through the configured domain.
@@ -140,6 +169,9 @@ The screenshots below show Docker verification, the Docker Compose configuration
 
 ### Minecraft Domain Connection
 ![Minecraft Domain Connection](./screenshots/minecraft-domain-connected.png)
+
+### Automated Backup Verified
+![Automated Backup Verified](./screenshots/automated-backup-verified.png)
 
 ## Key Learnings
 
