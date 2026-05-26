@@ -197,15 +197,6 @@ du -sh ~/restore-test/minecraft/data
 
 rm -rf ~/restore-test
 ```
-
-Oppdater også `Key Learnings` med disse punktene:
-
-```md
-- Automated backup scripting
-- Cron-based scheduled tasks
-- Backup retention management
-- Restore testing and backup verification
-```
 ## Monitoring
 
 Uptime Kuma was deployed using Docker Compose to monitor the public Minecraft server endpoint.
