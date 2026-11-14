@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations: {}
+  name: hello-nginx
+  namespace: k3s-lab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hello-nginx
+  template:
+    metadata:
+      labels:
+        app: hello-nginx
+    spec:
+      containers:
+      - image: docker.io/library/nginx:stable-alpine
+        name: nginx
+        ports:
+        - containerPort: 80
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  name: hello-nginx
+  namespace: k3s-lab
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+  selector:
+    app: hello-nginx
+  type: ClusterIP
