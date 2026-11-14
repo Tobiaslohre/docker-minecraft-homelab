@@ -5,7 +5,7 @@ metadata:
   name: hello-nginx
   namespace: k3s-lab
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: hello-nginx
