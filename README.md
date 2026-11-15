@@ -275,10 +275,29 @@ The backup pull uses a dedicated EliteDesk SSH key. The ProDesk restricts that k
 
 ## Screenshots
 
-### Initial setup
+### Two-host verification
 
-<details>
-<summary>Docker, networking, backup and hardening screenshots</summary>
+#### Grafana host metrics
+
+![Grafana Node Exporter dashboard for the EliteDesk](screenshots/grafana-elitedesk-node-overview.png)
+
+#### Minecraft restore
+
+![Paper startup and status query on the EliteDesk](screenshots/minecraft-backup-restore-test.png)
+
+#### MariaDB restore
+
+![MariaDB SQL import and table checks](screenshots/mariadb-backup-restore-test.png)
+
+#### Minecraft availability
+
+![Uptime Kuma GameDig monitor on the EliteDesk](screenshots/uptime-kuma-minecraft-monitor.png)
+
+#### Argo CD rollout
+
+![Argo CD showing a synced application with two ready NGINX replicas](screenshots/argocd-gitops-scale-test.png)
+
+### Initial setup
 
 These screenshots show Docker verification, the Docker Compose configuration, the running Minecraft container, successful port testing, and a Minecraft client connection through the configured domain.
 
@@ -308,20 +327,6 @@ These screenshots show Docker verification, the Docker Compose configuration, th
 
 #### Server Hardening Verified
 ![Server Hardening Verified](./screenshots/server-hardening-verified.png)
-
-</details>
-
-### Two-host verification
-
-| Check | Screenshot |
-| --- | --- |
-| Minecraft restore | [Paper startup and status query](screenshots/minecraft-backup-restore-test.png) |
-| MariaDB restore | [SQL import and table checks](screenshots/mariadb-backup-restore-test.png) |
-| Minecraft availability | [GameDig monitor on the EliteDesk](screenshots/uptime-kuma-minecraft-monitor.png) |
-| GitOps rollout | [Argo CD sync and two ready NGINX replicas](screenshots/argocd-gitops-scale-test.png) |
-| EliteDesk node metrics | [Grafana Node Exporter dashboard](screenshots/grafana-elitedesk-node-overview.png) |
-
-![Grafana Node Exporter dashboard for the EliteDesk](screenshots/grafana-elitedesk-node-overview.png)
 
 ## Key Learnings
 
