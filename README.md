@@ -1,311 +1,84 @@
-# Docker Minecraft Homelab Server
+# Minecraft Homelab
 
-## Overview
-
-This project documents a Minecraft server running in Docker on a self-hosted Ubuntu Server homelab machine.
-
-The goal of the project is to learn Docker Compose, persistent volumes, container networking, and basic game server operations in a local infrastructure environment.
+I run a Paper Minecraft server on an HP ProDesk and use a separate HP EliteDesk for backups, recovery testing, monitoring, and a single-node K3s lab. Both machines run Ubuntu Server. The setup lets me test recovery and Kubernetes deployments while the game server runs on its own host.
 
 ## Architecture
 
 ```mermaid
-graph TD
-
-    Player[Minecraft Client] --> DNS[mc.tobiaslohre.no]
-    DNS --> Cloudflare[Cloudflare DNS]
-    Cloudflare --> Router[Home Router / NAT]
-    Router -->|TCP 25565 Port Forward| Host[HP EliteDesk<br>Ubuntu Server]
-
-    Host --> Docker[Docker Engine]
-    Docker --> Minecraft[PaperMC Minecraft Container]
-    Minecraft --> Volume[Persistent Data Volume<br>./data]
-
-    Host --> Cron[Cron Job]
-    Cron --> BackupScript[Minecraft Backup Script]
-    BackupScript --> BackupFiles[Compressed Backup Archives<br>~/backups/minecraft]
-
-    Host --> Kuma[Uptime Kuma Container]
-    Kuma -->|TCP Check<br>mc.tobiaslohre.no:25565| Minecraft
-
-    Host --> SSH[Hardened SSH Access<br>Key-only Login]
-    SSH --> Fail2ban[fail2ban SSH Protection]
-```
-## Tech Stack
-
-- HP EliteDesk
-- Ubuntu Server
-- Docker Engine
-- Docker Compose
-- PaperMC
-- Minecraft Java Edition
-- Local network access
-
-## Setup Process
-
-- Installed Docker Engine on Ubuntu Server
-- Created a Docker Compose configuration
-- Deployed a PaperMC Minecraft server container
-- Exposed Minecraft port `25565`
-- Mounted persistent server data using a local volume
-- Configured container restart policy with `unless-stopped`
-- Verified the server using Docker logs
-- Connected successfully from a Minecraft client on the local network
-
-## Docker Compose Configuration
-
-```yaml
-services:
-  minecraft:
-    image: itzg/minecraft-server:latest
-    container_name: minecraft-server
-    ports:
-      - "25565:25565"
-    environment:
-      EULA: "TRUE"
-      TYPE: "PAPER"
-      VERSION: "1.21.4"
-      MEMORY: "4G"
-      ONLINE_MODE: "TRUE"
-      MOTD: "Elitedesk Minecraft Server"
-    volumes:
-      - ./data:/data
-    restart: unless-stopped
+flowchart TB
+    player["Minecraft Java client"] -->|TCP 25565| router["Home router"]
+    router -->|Port forward| prodesk["ProDesk · Minecraft and MariaDB"]
+    elitedesk["EliteDesk · Backups, monitoring and K3s"] -->|GameDig status check| prodesk
+    elitedesk -->|SSH backup pull| prodesk
+    github["GitHub main"] -->|Argo CD sync| elitedesk
 ```
 
-## Useful Commands
+| Host | Role | Services |
+| --- | --- | --- |
+| **ProDesk** | Minecraft and plugin data | Docker / Compose, Paper, MariaDB 11.4 |
+| **EliteDesk** | Recovery and observability | Backup pull timer, Uptime Kuma in Docker, K3s with Argo CD, Prometheus and Grafana |
 
-Start the server:
+The documented public game route uses Cloudflare DNS (`mc.tobiaslohre.no`) and TCP `25565` port forwarding. Uptime Kuma checks the game endpoint over the LAN.
 
-```bash
-docker compose up -d
-```
+Paper keeps its world and plugin files on a persistent Docker mount. LuckPerms and LiteBans use MariaDB for their database storage.
 
-View live logs:
+## Backup and recovery
 
-```bash
-docker logs -f minecraft-server
-```
+| Copy | Schedule | Retention |
+| --- | --- | --- |
+| ProDesk server-data archives | Nightly at `04:00 UTC` | Up to 14 days |
+| EliteDesk off-host copy | Daily at `06:00 UTC` via `minecraft-backup-pull.timer` | Latest verified nightly archive |
 
-View recent logs:
+The EliteDesk pulls completed `.tar.gz` archives with a dedicated SSH key restricted to reading backups. The pull job compares SHA-256 checksums before promoting a new copy. A manual run verified the **40 GiB** archive on the EliteDesk.
 
-```bash
-docker logs --tail 50 minecraft-server
-```
+I tested Minecraft recovery by booting the restored world in a separate container on the EliteDesk. The database test used an on-demand SQL dump and an isolated MariaDB container.
 
-Check running containers:
+## K3s and GitOps
 
-```bash
-docker ps
-```
+Argo CD watches the `main` branch. The [NGINX manifest](apps/hello-nginx/hello-nginx.yaml) defines a Deployment with an HTTP readiness probe and a ClusterIP Service in `k3s-lab`.
 
-Restart the server:
+To test pod recovery, I deleted the running NGINX pod. Kubernetes created a new pod, and the Service returned the NGINX welcome page. To test GitOps, I changed `replicas` from `1` to `2` in GitHub and checked the rollout in Argo CD and K3s.
 
-```bash
-docker compose restart
-```
-
-Stop the server:
-
-```bash
-docker compose down
-```
-
-## Current Status
-
-The Minecraft server is running in Docker on the homelab server and is accessible from both the local network and through the configured DNS record:
-
-```text
-mc.tobiaslohre.no
-```
-
-## Public Access
-
-The Minecraft server was made reachable from outside the local network by configuring router port forwarding and DNS.
-
-- Public DNS record: `mc.tobiaslohre.no`
-- Router port forwarding: TCP `25565`
-- Internal server IP: `192.168.1.41`
-- Minecraft server port: `25565`
-- DNS provider: Cloudflare
-- Domain registrar: Webhuset
-
-The DNS record points to the public IP address, while the router forwards Minecraft traffic on TCP port `25565` to the internal Ubuntu Server running the Docker container.
-
-## Automated Backups
-
-An automated backup script was created to back up the Minecraft server data directory.
-
-The backup script:
-
-- Saves the Minecraft world before backup using `rcon-cli save-all`
-- Creates a compressed `.tar.gz` archive of the persistent `./data` directory
-- Stores backups in `~/backups/minecraft`
-- Uses timestamps for backup filenames
-- Removes backups older than 14 days
-- Runs automatically every night using cron
-
-Backup schedule:
-
-```cron
-0 4 * * * /home/tobias/scripts/minecraft-backup.sh >> /home/tobias/backups/minecraft/backup.log 2>&1
-```
-
-Manual backup command: ~/scripts/minecraft-backup.sh
-
-Example backup output:
-
-Starting Minecraft backup...
-Minecraft container is running. Saving world...
-Backup created: /home/tobias/backups/minecraft/minecraft-backup-YYYY-MM-DD_HH-MM-SS.tar.gz
-Old backups older than 14 days removed.
-Backup complete.
-
-Example backup verification: ls -lh ~/backups/minecraft
-tar -tzf ~/backups/minecraft/*.tar.gz | head
-
-The backup archive was verified by listing its contents and confirming that it includes the Minecraft server data/ directory.
-
-## Restore Test
-
-A restore test was performed by extracting the latest backup archive into a separate test directory without overwriting the live Minecraft server data.
-
-The restore test verified that:
-
-- The backup archive could be extracted successfully
-- The restored `data/` directory was present
-- Minecraft world directories were included:
-  - `world`
-  - `world_nether`
-  - `world_the_end`
-- The restored data size matched the live server data size
-
-Restore test commands:
-
-```bash
-mkdir -p ~/restore-test/minecraft
-
-LATEST_BACKUP=$(ls -t ~/backups/minecraft/minecraft-backup-*.tar.gz | head -1)
-echo "$LATEST_BACKUP"
-
-tar -xzf "$LATEST_BACKUP" -C ~/restore-test/minecraft
-
-ls -lh ~/restore-test/minecraft
-ls -lh ~/restore-test/minecraft/data
-
-du -sh ~/docker/minecraft-server/data
-du -sh ~/restore-test/minecraft/data
-
-rm -rf ~/restore-test
-```
 ## Monitoring
 
-Uptime Kuma was deployed using Docker Compose to monitor the public Minecraft server endpoint.
+**Uptime Kuma** uses a GameDig monitor to query the Minecraft Java server once a minute.
 
-The monitor checks whether the Minecraft server is reachable on the configured TCP port.
+**Prometheus and Grafana** run on K3s via `kube-prometheus-stack`. Argo CD combines the Helm chart with the repo's [monitoring values](apps/monitoring/values.yaml). Both services use `local-path` persistent volumes, and Grafana reads its admin credentials from a Kubernetes Secret.
 
-Monitored endpoint:
+![Grafana Node Exporter dashboard showing EliteDesk CPU, memory, disk, and network panels](screenshots/grafana-elitedesk-node-overview.png)
 
-```text
-mc.tobiaslohre.no:25565
+## Verification
+
+| Check | Observed result | Screenshot |
+| --- | --- | --- |
+| Minecraft recovery | Paper 1.21.11 started with restored data and responded to a status query. | [Paper restore test](screenshots/minecraft-backup-restore-test.png) |
+| Plugin database recovery | MariaDB 11.4 imported the SQL dump, and all 16 plugin tables passed `mariadb-check`. | [MariaDB restore test](screenshots/mariadb-backup-restore-test.png) |
+| Game availability | GameDig went from `Down` to `Up` after the game server started. | [Uptime Kuma monitor](screenshots/uptime-kuma-minecraft-monitor.png) |
+| GitOps rollout | Argo CD showed `Synced` and `Healthy`. K3s showed `2/2` replicas ready. | [Argo CD scale test](screenshots/argocd-gitops-scale-test.png) |
+| Node metrics | Grafana displayed live CPU, memory and disk metrics from Prometheus. | [EliteDesk Grafana dashboard](screenshots/grafana-elitedesk-node-overview.png) |
+
+The initial Docker deployment and connection tests are also in the [screenshot directory](screenshots/).
+
+## Operator checks
+
+Run these on the **ProDesk**.
+
+```bash
+sudo docker logs --tail 50 minecraft-survival
+sudo tail -n 20 /srv/data/backups/minecraft-nightly/backup.log
 ```
-Monitoring setup:
 
-Uptime Kuma runs in Docker
-Web interface is available locally on port 3001
-Minecraft server is monitored using a TCP port check
-Uptime Kuma access is restricted to the local network through UFW
+Run these on the **EliteDesk**.
 
-UFW rule for local-only access:
-
-sudo ufw allow from 192.168.1.0/24 to any port 3001 proto tcp
-
-## Server Hardening
-
-Basic server hardening was applied to reduce the attack surface of the homelab server.
-
-Implemented hardening steps:
-
-- SSH key authentication enabled
-- Password-based SSH login disabled
-- Root SSH login disabled
-- Keyboard-interactive authentication disabled
-- SSH configuration validated using `sshd -t`
-- SSH access tested using public key authentication
-- fail2ban installed and enabled for SSH protection
-
-Effective SSH configuration:
-
-```text
-
-fail2ban status:
-
-Number of jail: 1
-Jail list: sshd
-Currently banned: 0
-
-This improves SSH security by allowing only public key authentication and monitoring failed SSH login attempts.
-pubkeyauthentication yes
-passwordauthentication no
-kbdinteractiveauthentication no
-permitrootlogin no
+```bash
+systemctl list-timers --all minecraft-backup-pull.timer
+sudo journalctl -u minecraft-backup-pull.service -n 20 --no-pager
+sudo k3s kubectl -n argocd get applications
+sudo k3s kubectl -n monitoring get pods,pvc
 ```
-This improves SSH security by allowing only public key authentication and monitoring failed SSH login attempts.
 
-## Screenshots
+## Next steps
 
-The screenshots below show Docker verification, the Docker Compose configuration, the running Minecraft container, successful port testing, and a Minecraft client connection through the configured domain.
-
-### Docker Installation Verified
-![Docker Installation Verified](./screenshots/docker-installation-verified.png)
-
-### Docker Compose Configuration
-![Docker Compose Configuration](./screenshots/docker-compose-config.png)
-
-### Docker Container Running
-![Docker Container Running](./screenshots/docker-container-running.png)
-
-### Minecraft Client Connected
-![Minecraft Client Connected](./screenshots/minecraft-client-connected.png)
-
-### Minecraft Domain Port Test
-![Minecraft Domain Port Test](./screenshots/minecraft-domain-port-test.png)
-
-### Minecraft Domain Connection
-![Minecraft Domain Connection](./screenshots/minecraft-domain-connected.png)
-
-### Automated Backup Verified
-![Automated Backup Verified](./screenshots/automated-backup-verified.png)
-
-### Uptime Kuma Monitoring
-![Uptime Kuma Monitoring](./screenshots/uptime-kuma-monitoring.png)
-
-### Server Hardening Verified
-![Server Hardening Verified](./screenshots/server-hardening-verified.png)
-
-## Key Learnings
-
-- Docker Compose service configuration
-- Container port mapping
-- Persistent volume usage for server data
-- Basic container lifecycle management
-- Reading container logs for troubleshooting
-- Hosting a service on a self-managed Linux server
-- Difference between local network hosting and public internet exposure
-- Basic service monitoring with Uptime Kuma
-- TCP port monitoring for public services
-- Restricting internal admin dashboards to the local network
-
-## Security Note
-
-The server is publicly reachable through a DNS record and router port forwarding.
-
-SSH access has been hardened by enabling public key authentication, disabling password-based login, disabling root login, and enabling fail2ban for SSH protection.
-
-Only the required Minecraft port is exposed publicly. Administrative access should remain restricted to the local network or trusted IP addresses.
-
-## Future Improvements
-
-- Add off-server backups
-- Add Prometheus and Grafana monitoring
-- Add alert notifications for service downtime
-- Automate deployment with Ansible
+- Schedule MariaDB dumps and include them in the off-host backup job.
+- Send alerts for Minecraft downtime and failed or stale backups.
+- Automate host setup with Ansible.
