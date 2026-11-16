@@ -1,0 +1,46 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello-nginx
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Tobiaslohre/docker-minecraft-homelab.git
+    targetRevision: main
+    path: apps/hello-nginx
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: k3s-lab
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: "93.2.2"
+      helm:
+        valueFiles:
+          - $values/apps/monitoring/values.yaml
+    - repoURL: https://github.com/Tobiaslohre/docker-minecraft-homelab.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
