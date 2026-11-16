@@ -1,0 +1,43 @@
+name: minecraft-homelab-reference
+
+services:
+  minecraft:
+    image: itzg/minecraft-server:java25
+    environment:
+      EULA: "${MINECRAFT_EULA:-FALSE}"
+      TYPE: PAPER
+      VERSION: "1.21.11"
+      MEMORY: "${MINECRAFT_MEMORY:-4G}"
+      ENABLE_RCON: "true"
+      RCON_PASSWORD: "${RCON_PASSWORD:?Set RCON_PASSWORD in deploy/.env}"
+    ports:
+      - "127.0.0.1:${MINECRAFT_PORT:-25566}:25565/tcp"
+    volumes:
+      - minecraft-data:/data
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mariadb:
+    image: mariadb:11.4
+    environment:
+      MARIADB_ROOT_HOST: localhost
+      MARIADB_ROOT_PASSWORD: "${MARIADB_ROOT_PASSWORD:?Set MARIADB_ROOT_PASSWORD in deploy/.env}"
+      MARIADB_DATABASE: piraden_luckperms
+      MARIADB_USER: minecraft
+      MARIADB_PASSWORD: "${MARIADB_PASSWORD:?Set MARIADB_PASSWORD in deploy/.env}"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./init-plugin-databases.sql:/docker-entrypoint-initdb.d/10-plugin-databases.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+volumes:
+  minecraft-data:
+  mariadb-data:
