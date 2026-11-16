@@ -2,11 +2,15 @@
 
 ## Overview
 
-This project documents a Minecraft server running in Docker on a self-hosted Ubuntu Server homelab machine.
+I built a two-host Ubuntu homelab around a Minecraft service. **ProDesk** runs Paper and MariaDB with Docker Compose. **EliteDesk** pulls an off-host copy of the Minecraft backup, monitors the service, and runs a single-node Kubernetes lab with K3s and Argo CD.
 
-The goal of the project is to learn Docker Compose, persistent volumes, container networking, and basic game server operations in a local infrastructure environment.
+| What I verified | Result |
+| --- | --- |
+| [Off-host backup](#prodesk-archives-and-elitedesk-copy) | SHA-256 matched for a 40 GiB archive copied to the EliteDesk. |
+| [Minecraft and MariaDB recovery](#restore-test) | Paper started with the restored world data, and 16 MariaDB plugin tables passed the database checks. |
+| [GitOps rollout](#argo-cd-rollout) | A Git commit changed NGINX from one replica to two ready replicas. Argo CD reported the application as synced and healthy. |
 
-The project started on an HP EliteDesk. The ProDesk now runs the Minecraft server and plugin database. The EliteDesk holds a second copy of the game backup, runs recovery tests and service monitoring, and hosts a single-node K3s lab for GitOps.
+The [deployment guide](deploy/README.md) shows how to start the reference Docker stack and define the two Argo CD applications.
 
 ## Architecture
 
@@ -19,7 +23,13 @@ flowchart TB
     github["GitHub main"] -->|Argo CD sync| elitedesk
 ```
 
-Both hosts run Ubuntu Server. The ProDesk stores Minecraft data and local archives on the drive mounted at `/srv/data`. Its MariaDB container stores data for LuckPerms and LiteBans. The EliteDesk connects to the ProDesk over the LAN for backup and monitoring.
+### How the parts work together
+
+1. **Player traffic.** Cloudflare DNS resolves the game address for players. The home router uses port forwarding (destination NAT) to send Minecraft traffic on TCP `25565` to Paper on the ProDesk.
+2. **Persistent data.** Docker Compose defines the containers and the network they share. A bind mount maps host storage under `/srv/data` into the game container so the world files and plugins persist across container replacements. LuckPerms and LiteBans store their database records in MariaDB.
+3. **Backup and recovery.** The ProDesk creates a compressed archive of the game data. The EliteDesk pulls the completed archive over SSH and checks its SHA-256 checksum before promoting the copy. Separate test containers verify the recovered Minecraft world and MariaDB data.
+4. **Monitoring.** Uptime Kuma checks whether the game server answers a Minecraft status query over the LAN. Prometheus collects metrics such as CPU, memory and disk usage. Grafana displays those metrics in dashboards.
+5. **GitOps.** Git defines the desired state of the NGINX and monitoring applications. Argo CD reconciles the cluster with Git. K3s schedules the pods and replaces them when the Deployment needs a new one.
 
 ## Tech Stack
 
@@ -56,6 +66,17 @@ The first deployment ran on the EliteDesk.
 
 ## Docker Compose Configuration
 
+### ProDesk services observed during validation
+
+| Container | Image | Role |
+| --- | --- | --- |
+| `minecraft-survival` | `itzg/minecraft-server:java25` | Paper Survival with persistent world and plugin files |
+| `piraden-mariadb` | `mariadb:11.4` | LuckPerms and LiteBans database storage |
+
+The [Compose reference](deploy/compose.yaml) starts these two services in a clean Compose project. It uses its own Docker volumes and a loopback port, with local settings from [.env.example](deploy/.env.example). The [deployment guide](deploy/README.md#docker-compose) includes a configuration check and an RCON status query.
+
+### Initial EliteDesk Compose example
+
 This is the original single-host Compose example from the EliteDesk deployment.
 
 ```yaml
@@ -76,13 +97,6 @@ services:
       - ./data:/data
     restart: unless-stopped
 ```
-
-### Current ProDesk containers
-
-| Container | Image | Role |
-| --- | --- | --- |
-| `minecraft-survival` | `itzg/minecraft-server:java21` | Paper Survival with a persistent data mount |
-| `piraden-mariadb` | `mariadb:11.4` | LuckPerms and LiteBans database storage |
 
 ## Useful Commands
 
@@ -204,6 +218,8 @@ I exported the LuckPerms and LiteBans schemas on demand, verified the dump's SHA
 ## K3s and GitOps
 
 The EliteDesk runs a single-node K3s cluster with Traefik and ServiceLB disabled. Argo CD tracks the repo's `main` branch. The [NGINX manifest](apps/hello-nginx/hello-nginx.yaml) defines a Deployment with an HTTP readiness probe and a ClusterIP Service in the `k3s-lab` namespace.
+
+The [Argo CD Application manifests](deploy/argocd-applications.yaml) describe which sources to sync and where each application runs. `hello-nginx` uses the Kubernetes manifests in Git. `monitoring` combines a pinned Helm chart with the [monitoring values](apps/monitoring/values.yaml) from this repo.
 
 I checked two behaviors in the lab.
 
